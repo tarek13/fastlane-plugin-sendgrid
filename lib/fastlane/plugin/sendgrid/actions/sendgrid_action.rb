@@ -5,7 +5,36 @@ module Fastlane
   module Actions
     class SendgridAction < Action
       def self.run(params)
-        UI.message("The sendgrid plugin is working!")
+        require 'sendgrid-ruby'
+        from = SendGrid::Email.new(email: params[:from], name: params[:username])
+        subject = params[:subject]
+        content = SendGrid::Content.new(type: 'text/html', value: params[:body])
+
+        mail = SendGrid::Mail.new
+        personalization = SendGrid::Personalization.new
+
+        params[:to].each do |item|
+          puts(item)
+          personalization.add_to(Email.new(email: item))
+        end
+
+        params[:cc].each do |item|
+          puts(item)
+          personalization.add_cc(Email.new(email: item))
+        end
+
+        personalization.add_header(Header.new(key: 'References', value: params[:references]))
+        personalization.add_header(Header.new(key: 'In-Reply-To', value: params[:inReplayTo]))
+
+        mail.add_personalization(personalization)
+        mail.subject = subject
+        mail.from = from
+        mail.contents = content
+
+        sg = SendGrid::API.new(api_key: params[:apiKey])
+        response = sg.client.mail._('send').post(request_body: mail.to_json)
+        puts(response.status_code)
+        puts(response.body)
       end
 
       def self.description
@@ -27,11 +56,66 @@ module Fastlane
 
       def self.available_options
         [
-          # FastlaneCore::ConfigItem.new(key: :your_option,
-          #                         env_name: "SENDGRID_YOUR_OPTION",
-          #                      description: "A description of your option",
-          #                         optional: false,
-          #                             type: String)
+          FastlaneCore::ConfigItem.new(key: :apiKey,
+                                       env_name: "FL_SENDGRID_API_KEY",
+                                       description: "Sendgrid api key",
+                                       verify_block: proc do |value|
+                                         UI.user_error!("No api key") if value.to_s.length == 0
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :username,
+                                       env_name: "FL_MAIL_USERNAME",
+                                       description: "Username for mail",
+                                       optional: true,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("No username") if value.to_s.length == 0
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :from,
+                                       env_name: "FL_MAIL_FROM",
+                                       description: "from for mail",
+                                       is_string: false,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("No from") if value.to_s.length == 0
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :to,
+                                       env_name: "FL_MAIL_TO",
+                                       description: "Mail to recipients",
+                                       sensitive: true,
+                                       is_string: false,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("No recipients") if value.to_s.length == 0
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :cc,
+                                       env_name: "FL_MAIL_CC",
+                                       description: "Mail cc recipients",
+                                       sensitive: true,
+                                       is_string: false,
+                                       optional: true),
+          FastlaneCore::ConfigItem.new(key: :subject,
+                                       env_name: "FL_MAIL_SUBJECT",
+                                       description: "The subject of the email",
+                                       sensitive: true,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("No subject of email") if value.to_s.length == 0
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :body,
+                                       env_name: "FL_MAIL_BODY",
+                                       description: "The body of the email",
+                                       sensitive: true,
+                                       verify_block: proc do |value|
+                                         UI.user_error!("No body of email") if value.to_s.length == 0
+                                       end),
+          FastlaneCore::ConfigItem.new(key: :inReplayTo,
+                                       env_name: "FL_MAIL_IN_REPLAY_TO",
+                                       description: "Mail in replay To",
+                                       sensitive: true,
+                                       is_string: false,
+                                       optional: true),
+          FastlaneCore::ConfigItem.new(key: :references,
+                                       env_name: "FL_MAIL_REFERENCES",
+                                       description: "Mail References",
+                                       sensitive: true,
+                                       is_string: false,
+                                       optional: true)
         ]
       end
 
