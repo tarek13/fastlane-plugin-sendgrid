@@ -15,16 +15,16 @@ module Fastlane
 
         params[:to].each do |item|
           puts(item)
-          personalization.add_to(Email.new(email: item))
+          personalization.add_to(SendGrid::Email.new(email: item))
         end
 
         params[:cc].each do |item|
           puts(item)
-          personalization.add_cc(Email.new(email: item))
+          personalization.add_cc(SendGrid::Email.new(email: item))
         end
 
-        personalization.add_header(Header.new(key: 'References', value: params[:references]))
-        personalization.add_header(Header.new(key: 'In-Reply-To', value: params[:inReplayTo]))
+        personalization.add_header(SendGrid::Header.new(key: 'References', value: params[:references]))
+        personalization.add_header(SendGrid::Header.new(key: 'In-Reply-To', value: params[:inReplayTo]))
 
         mail.add_personalization(personalization)
         mail.subject = subject
