@@ -33,7 +33,7 @@ module Fastlane
         mail.add_personalization(personalization)
         mail.subject = subject
         mail.from = from
-        mail.contents = content
+        mail.add_content(content)
 
         sg = SendGrid::API.new(api_key: params[:apiKey])
         response = sg.client.mail._('send').post(request_body: mail.to_json)
