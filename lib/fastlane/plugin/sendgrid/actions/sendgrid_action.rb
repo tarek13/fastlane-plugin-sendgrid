@@ -23,8 +23,12 @@ module Fastlane
           personalization.add_cc(SendGrid::Email.new(email: item))
         end
 
-        personalization.add_header(SendGrid::Header.new(key: 'References', value: params[:references]))
-        personalization.add_header(SendGrid::Header.new(key: 'In-Reply-To', value: params[:inReplayTo]))
+        unless params[:references].nil?
+          personalization.add_header(SendGrid::Header.new(key: 'References', value: params[:references]))
+        end
+        unless params[:inReplayTo].nil?
+          personalization.add_header(SendGrid::Header.new(key: 'In-Reply-To', value: params[:inReplayTo]))
+        end
 
         mail.add_personalization(personalization)
         mail.subject = subject
